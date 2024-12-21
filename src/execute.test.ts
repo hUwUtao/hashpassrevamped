@@ -1,1 +1,2 @@
-test.todo('todo');
+import { test } from "vitest";
+test.todo("todo");

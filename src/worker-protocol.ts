@@ -1,11 +1,11 @@
 export interface Request {
-  messageId: number;
-  domain: string;
-  universalPassword: string;
-  username: string;
+	messageId: number;
+	domain: string;
+	universalPassword: string;
+	username: string;
 }
 
 export interface Response {
-  messageId: number;
-  generatedPassword: string;
+	messageId: number;
+	generatedPassword: string;
 }

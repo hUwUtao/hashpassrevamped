@@ -1,4 +1,4 @@
-import type { Request, Response } from './worker-protocol';
+import type { Request, Response } from "./worker-protocol";
 
 // Spawn a web worker for offloading password generation to a dedicated thread.
 const worker = new Worker(new URL("./worker.ts", import.meta.url));
@@ -18,12 +18,14 @@ worker.onmessage = (event: MessageEvent<Response>) => {
 export default function hashpass(
   domain: string,
   universalPassword: string,
+  username: string, // Add username parameter
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const request: Request = {
       messageId: nextMessageId,
       domain,
       universalPassword,
+      username, // Include username in the request
     };
 
     requests[nextMessageId] = resolve;

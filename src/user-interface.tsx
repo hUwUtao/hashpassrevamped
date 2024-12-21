@@ -1,4 +1,4 @@
-import * as React from "react";
+import type * as React from "react";
 import debounce from "debounce";
 import { createUseStyles } from "react-jss";
 import { useEffect, useCallback, useRef, useState } from "react";
