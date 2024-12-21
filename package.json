@@ -15,8 +15,7 @@
 		"@types/chrome": "^0.0.254",
 		"@types/debounce": "^1.2.4",
 		"@types/pbkdf2": "^3.1.2",
-		"react": "^19.0.0",
-		"react-dom": "^19.0.0",
+		"@types/react": "^19.0.2",
 		"typescript": "^5.3.3",
 		"vite": "^4.0.0",
 		"vite-plugin-preact": "^0.2.1"
@@ -29,6 +28,8 @@
 		"jss": "^10.10.0",
 		"jss-preset-default": "^10.10.0",
 		"pbkdf2": "^3.1.2",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0",
 		"react-jss": "^10.10.0",
 		"vitest": "^2.1.8"
 	}

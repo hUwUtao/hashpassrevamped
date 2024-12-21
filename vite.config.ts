@@ -5,6 +5,9 @@ export default defineConfig({
 	plugins: [
 		// preact()
 	],
+	worker: {
+		format: "es"
+	},
 	build: {
 		outDir: "dist",
 		sourcemap: true,
