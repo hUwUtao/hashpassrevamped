@@ -1,11 +1,11 @@
 {
-  "name": "Hashpass",
+  "name": "HashpassRe",
   "description": "A simple password manager with a twist.",
-  "version": "2.1.7",
+  "version": "2.2.0",
   "manifest_version": 3,
   "permissions": ["activeTab", "scripting"],
   "action": {
-    "default_popup": "index.html",
+    "default_popup": "dist/index.html",
     "default_icon": {
       "16": "images/icon.png",
       "32": "images/icon.png",

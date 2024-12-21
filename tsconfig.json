@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
-    "jsx": "react",
-    "module": "nodenext",
+    "module": "ESNext",
     "outDir": "dist",
     "sourceMap": true,
-    "strict": true,
-    "target": "es2021"
+    "strict": false,
+    "target": "ESNext",
+    "jsx": "react",
+    "allowSyntheticDefaultImports": true,
   },
   "include": ["src/**/*.tsx"]
 }

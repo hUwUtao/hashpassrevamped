@@ -1,13 +1,13 @@
 import type { Request, Response } from './worker-protocol';
 
 // Spawn a web worker for offloading password generation to a dedicated thread.
-const worker = new Worker('dist/worker.bundle.js');
+const worker = new Worker(new URL("./worker.ts", import.meta.url));
 
 // Each message has a unique auto-incrementing identifier.
 let nextMessageId = 0;
 
 // Keep track of all in-flight requests so we know what to do with the corresponding responses.
-let requests: Record<number, (generatedPassword: string) => void> = {};
+const requests: Record<number, (generatedPassword: string) => void> = {};
 
 // This is the handler for incoming responses.
 worker.onmessage = (event: MessageEvent<Response>) => {
@@ -20,7 +20,7 @@ export default function hashpass(
   universalPassword: string,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    let request: Request = {
+    const request: Request = {
       messageId: nextMessageId,
       domain,
       universalPassword,
