@@ -1,11 +1,11 @@
 import hashpass from "./hashpass";
-import { test, expect } from "vitest"
+import { test, expect } from "vitest";
 
 test("returns the correct result for empty inputs", async () => {
-	expect(await hashpass("", "", "")).toBe("m3ndWDDpp2_pJ5LHJ5GedQ");
+	expect(await hashpass("", "", "")).toBe("XXqXOM6eDSv9253rv2rAWg");
 });
 
-const ONE_CORRECT_HASH = "K_st6rRJaRQojYdXjG0cZup2DJTMDvSk";
+const ONE_CORRECT_HASH = "K_st6rRJaRTERhLxbHn4Ido-5BAbIG0y";
 
 test("returns the correct result for an example domain and password", async () => {
 	expect(await hashpass("www.example.com", "password", "username")).toBe(
@@ -24,27 +24,27 @@ test("strips whitespace from the domain", async () => {
 
 test("does not strip whitespace from the password", async () => {
 	expect(await hashpass("www.example.com", "password", "username")).toBe(
-		ONE_CORRECT_HASH
+		ONE_CORRECT_HASH,
 	);
 	expect(await hashpass("www.example.com", " password ", "username")).not.toBe(
-		"expected_result",
+		ONE_CORRECT_HASH,
 	);
 });
 
 test("is case-insensitive for domains", async () => {
 	expect(await hashpass("www.example.com", "password", "username")).toBe(
-		ONE_CORRECT_HASH
+		ONE_CORRECT_HASH,
 	);
 	expect(await hashpass("Www.Example.Com", "password", "username")).toBe(
-		ONE_CORRECT_HASH
+		ONE_CORRECT_HASH,
 	);
 });
 
 test("is case-sensitive for passwords", async () => {
 	expect(await hashpass("www.example.com", "password", "username")).toBe(
-		ONE_CORRECT_HASH
+		ONE_CORRECT_HASH,
 	);
 	expect(await hashpass("www.example.com", "Password", "username")).not.toBe(
-		"expected_result",
+		ONE_CORRECT_HASH,
 	);
 });

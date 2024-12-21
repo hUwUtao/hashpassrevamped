@@ -1,27 +1,12 @@
-import { pbkdf2 } from "pbkdf2";
 import type { Request, Response } from "./worker-protocol";
+import hashpass from "./hashpass";
 
-self.onmessage = async (event) => {
-  const request: Request = event.data;
+export async function generatePassword(request: Request): Promise<Response> {
+  const derivedPassword = await hashpass(request.domain, request.universalPassword, request.username);
 
-  const derivedKey = await new Promise<Buffer>((resolve, reject) => {
-    pbkdf2(
-      request.universalPassword,
-      request.domain + request.username,
-      1,
-      32,
-      "sha512",
-      (err, derivedKey) => {
-        if (err) reject(err);
-        else resolve(derivedKey);
-      }
-    );
-  });
-
-  const response: Response = {
+  return {
     messageId: request.messageId,
-    generatedPassword: derivedKey.toString("hex"),
+    generatedPassword: derivedPassword,
   };
+}
 
-  self.postMessage(response);
-};

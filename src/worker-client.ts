@@ -11,27 +11,27 @@ const requests: Record<number, (generatedPassword: string) => void> = {};
 
 // This is the handler for incoming responses.
 worker.onmessage = (event: MessageEvent<Response>) => {
-  requests[event.data.messageId](event.data.generatedPassword);
-  delete requests[event.data.messageId];
+	requests[event.data.messageId](event.data.generatedPassword);
+	delete requests[event.data.messageId];
 };
 
 export default function hashpass(
-  domain: string,
-  universalPassword: string,
-  username: string, // Add username parameter
+	domain: string,
+	universalPassword: string,
+	username: string, // Add username parameter
 ): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const request: Request = {
-      messageId: nextMessageId,
-      domain,
-      universalPassword,
-      username, // Include username in the request
-    };
+	return new Promise((resolve, reject) => {
+		const request: Request = {
+			messageId: nextMessageId,
+			domain,
+			universalPassword,
+			username, // Include username in the request
+		};
 
-    requests[nextMessageId] = resolve;
+		requests[nextMessageId] = resolve;
 
-    worker.postMessage(request);
+		worker.postMessage(request);
 
-    nextMessageId = (nextMessageId + 1) % Number.MAX_SAFE_INTEGER;
-  });
+		nextMessageId = (nextMessageId + 1) % Number.MAX_SAFE_INTEGER;
+	});
 }

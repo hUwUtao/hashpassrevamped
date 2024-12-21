@@ -14,7 +14,10 @@ function xorBuffers(buffer1: Uint8Array, buffer2: Uint8Array): Uint8Array {
 }
 
 function toBase64Url(buffer: Uint8Array): string {
-  return fromByteArray(buffer).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return fromByteArray(buffer)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 async function computeSha256(data: Uint8Array): Promise<Uint8Array> {
@@ -33,7 +36,7 @@ export default async function hashpass(
   );
   const usernameHash = new TextEncoder().encode(username.slice(0, 8));
   const domainHash = await computeSha256(
-    new TextEncoder().encode(domain.replaceAll(' ', '').toLowerCase()),
+    new TextEncoder().encode(domain.replaceAll(" ", "").toLowerCase()),
   );
 
   const xorResult = xorBuffers(storedPasswordHash, usernameHash);
@@ -46,7 +49,7 @@ export default async function hashpass(
   ]);
 
   const pbkdf2Result = await new Promise<Uint8Array>((resolve, reject) => {
-    pbkdf2(combinedHash, "salt", 1000, 16, "sha256", (err, derivedKey) => {
+    pbkdf2(combinedHash, "salt", rounds, 16, "sha256", (err, derivedKey) => {
       if (err) reject(err);
       else resolve(new Uint8Array(derivedKey));
     });
