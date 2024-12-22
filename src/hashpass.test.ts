@@ -2,10 +2,10 @@ import hashpass from "./hashpass";
 import { test, expect } from "vitest";
 
 test("returns the correct result for empty inputs", async () => {
-	expect(await hashpass("", "", "")).toBe("XXqXOM6eDSv9253rv2rAWg");
+	expect(await hashpass("", "", "")).toBe("s_vnV7WZpJyqI1tx58Y8ng");
 });
 
-const ONE_CORRECT_HASH = "K_st6rRJaRTERhLxbHn4Ido-5BAbIG0y";
+const ONE_CORRECT_HASH = "qwciU5Ik3qyQwxNQt9bwBZ4t9bpwUVjL";
 
 test("returns the correct result for an example domain and password", async () => {
 	expect(await hashpass("www.example.com", "password", "username")).toBe(

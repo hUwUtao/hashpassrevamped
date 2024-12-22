@@ -1,10 +1,11 @@
-import type * as React from "react";
+import type React from "react";
 import { useEffect, useState } from "react";
 
 import UserInterface from "./user-interface";
 import fireAndForget from "./fire-and-forget";
 import getDomain from "./get-domain";
 import getIsPasswordFieldActive from "./get-is-password-field-active";
+import { PasswordProvider } from "./secret";
 
 const Loader = (): React.ReactElement | null => {
 	const [domain, setDomain] = useState<string | null>(null);
@@ -21,10 +22,12 @@ const Loader = (): React.ReactElement | null => {
 	}, []);
 
 	return (
-		<UserInterface
-			initialDomain={domain}
-			isPasswordFieldActive={isPasswordFieldActive}
-		/>
+		<PasswordProvider>
+			<UserInterface
+				initialDomain={domain}
+				isPasswordFieldActive={isPasswordFieldActive}
+			/>
+		</PasswordProvider>
 	);
 };
 

@@ -1,8 +1,10 @@
 import { defineConfig } from "vite";
-// import preact from '@preact/preset-vite';
+import UnoCSS from 'unocss/vite'
+import preact from '@preact/preset-vite';
 
 export default defineConfig({
 	plugins: [
+		UnoCSS(),
 		// preact()
 	],
 	worker: {
@@ -14,9 +16,10 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: {
-			react: "react",
-			"react-dom": "react-dom",
-			"react/jsx-runtime": "react/jsx-runtime",
+			"react": "preact/compat",
+			"react-dom/test-utils": "preact/test-utils",
+			"react-dom": "preact/compat",     // Must be below test-utils
+			"react/jsx-runtime": "preact/jsx-runtime"
 		},
 	},
 });

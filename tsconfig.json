@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
+    "module": "Preserve",
     "outDir": "dist",
     "sourceMap": true,
     "strict": false,

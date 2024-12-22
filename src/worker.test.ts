@@ -1,6 +1,6 @@
 
 import { test, expect } from "vitest";
-import { Request, Response } from "./worker-protocol";
+import type { Request, Response } from "./worker-protocol";
 import { generatePassword } from "./worker";
 
 test("worker generates the correct password", async () => {
@@ -15,7 +15,7 @@ test("worker generates the correct password", async () => {
 
 	const expectedResponse: Response = {
 		messageId: 1,
-		generatedPassword: "K_st6rRJaRTERhLxbHn4Ido-5BAbIG0y", // Expected hash
+		generatedPassword: "qwciU5Ik3qyQwxNQt9bwBZ4t9bpwUVjL", // Expected hash
 	};
 
 	const responsePromise = new Promise<Response>((resolve) => {

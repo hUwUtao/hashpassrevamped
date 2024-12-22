@@ -22,7 +22,7 @@
 	"commands": {
 		"_execute_action": {
 			"suggested_key": {
-				"default": "Ctrl+Shift+P"
+				"default": "Ctrl+Shift+L"
 			},
 			"description": "Opens Hashpass"
 		}

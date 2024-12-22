@@ -1,8 +1,10 @@
-import * as React from "react";
-import jss from "jss";
-import preset from "jss-preset-default";
+import type React from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createUseStyles } from "react-jss";
+
+import "./global.css";
+import "preact/debug";
+import "virtual:uno.css";
 
 import Loader from "./loader";
 
@@ -12,109 +14,42 @@ const chromeExtensionUrl =
 	"gkmegkoiplibopkmieofaaeloldidnko";
 const githubUrl = "https://github.com/stepchowfun/hashpass";
 
-jss.setup(preset());
-
-jss
-	.createStyleSheet({
-		"@global": {
-			"*, *::before, *::after": {
-				boxSizing: "border-box",
-				margin: 0,
-			},
-			body: {
-				// Create a block formatting context to contain margins of descendants.
-				display: "flow-root",
-
-				textRendering: "optimizeLegibility",
-				"-webkit-font-smoothing": "antialiased",
-				fontFamily: [
-					"-apple-system",
-					"BlinkMacSystemFont",
-					'"Segoe UI"',
-					"Roboto",
-					"Oxygen-Sans",
-					"Ubuntu",
-					"Cantarell",
-					'"Helvetica Neue"',
-					"sans-serif",
-				],
-			},
-			"input, button, textarea, select": {
-				font: "inherit",
-			},
-		},
-	})
-	.attach();
-
-const useStyles = createUseStyles({
-	extensionContainer: {
-		margin: "16px",
-	},
-	websiteContainer: {
-		width: "min-content",
-		position: "absolute",
-		top: "50%",
-		left: "50%",
-		transform: "translate(-50%, -50%)",
-	},
-	h1: {
-		fontSize: "32px",
-		color: "#222222",
-	},
-	icon: {
-		position: "relative",
-		top: "8px",
-		left: "-2px",
-		width: "38px",
-		height: "38px",
-		border: "0px",
-		padding: "0px",
-	},
-	p: {
-		marginTop: "16px",
-		lineHeight: "16px",
-		fontSize: "12px",
-		color: "#666666",
-	},
-	a: {
-		color: "#0d82d8",
-		fontWeight: "600",
-		"&:hover": {
-			color: "#d8690d",
-		},
-		"&:active": {
-			color: "#666666",
-		},
-	},
-});
-
 const Main = (): React.ReactElement => {
-	const classes = useStyles();
-
 	if (window.location.protocol === chromeExtensionProtocol) {
 		return (
-			<div className={classes.extensionContainer}>
+			<div className="m-4">
 				<Loader />
 			</div>
 		);
 	}
 
 	return (
-		<div className={classes.websiteContainer}>
-			<h1 className={classes.h1}>
-				<img className={classes.icon} src="images/icon.svg" /> Hashpass
+		<div className="w-min absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+			<h1 className="text-2xl text-gray-800">
+				<img
+					className="relative top-2 left-[-2px] w-9 h-9 border-0 p-0"
+					src="images/icon.svg"
+					alt="hashpass"
+				/>{" "}
+				Hashpass!re
 			</h1>
 			<div>
 				<Loader />
 			</div>
-			<p className={classes.p}>
+			<p className="mt-4 leading-4 text-xs text-gray-600">
 				Get the Chrome extension{" "}
-				<a className={classes.a} href={chromeExtensionUrl}>
+				<a
+					className="text-blue-600 font-semibold hover:text-orange-600 active:text-gray-600"
+					href={chromeExtensionUrl}
+				>
 					{" "}
 					here
 				</a>
 				. You can learn about Hashpass and browse its source code{" "}
-				<a className={classes.a} href={githubUrl}>
+				<a
+					className="text-blue-600 font-semibold hover:text-orange-600 active:text-gray-600"
+					href={githubUrl}
+				>
 					{" "}
 					here
 				</a>
@@ -125,7 +60,7 @@ const Main = (): React.ReactElement => {
 };
 
 createRoot(document.body.appendChild(document.createElement("div"))).render(
-	<React.StrictMode>
+	<StrictMode>
 		<Main />
-	</React.StrictMode>,
+	</StrictMode>,
 );

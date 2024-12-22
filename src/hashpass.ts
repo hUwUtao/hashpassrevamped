@@ -1,8 +1,7 @@
 import { Sha256 } from "@aws-crypto/sha256-browser";
-import { fromByteArray, toByteArray } from "base64-js";
-import { pbkdf2 } from "pbkdf2";
+import { fromByteArray } from "base64-js";
 
-const rounds = 2 ** 16;
+const rounds = 2 ** 12;
 
 function xorBuffers(buffer1: Uint8Array, buffer2: Uint8Array): Uint8Array {
   const length = Math.min(buffer1.length, buffer2.length);
@@ -20,10 +19,18 @@ function toBase64Url(buffer: Uint8Array): string {
     .replace(/=+$/, "");
 }
 
-async function computeSha256(data: Uint8Array): Promise<Uint8Array> {
+export async function computeSha256(data: Uint8Array): Promise<Uint8Array> {
   const hash = new Sha256();
   hash.update(data);
   return new Uint8Array(await hash.digest());
+}
+
+async function iterateSha256(data: Uint8Array, iterations: number): Promise<Uint8Array> {
+  let hash = data;
+  for (let i = 0; i < iterations; i++) {
+    hash = await computeSha256(hash);
+  }
+  return hash;
 }
 
 export default async function hashpass(
@@ -39,7 +46,10 @@ export default async function hashpass(
     new TextEncoder().encode(domain.replaceAll(" ", "").toLowerCase()),
   );
 
-  const xorResult = xorBuffers(storedPasswordHash, usernameHash);
+  const xorResult = xorBuffers(
+    xorBuffers(storedPasswordHash, domainHash),
+    usernameHash
+  );
   // const xorResultBase64 = fromByteArray(xorResult);
 
   const combinedHash = new Uint8Array([
@@ -48,12 +58,7 @@ export default async function hashpass(
     ...storedPasswordHash,
   ]);
 
-  const pbkdf2Result = await new Promise<Uint8Array>((resolve, reject) => {
-    pbkdf2(combinedHash, "salt", rounds, 16, "sha256", (err, derivedKey) => {
-      if (err) reject(err);
-      else resolve(new Uint8Array(derivedKey));
-    });
-  });
+  const iteratedHash = (await iterateSha256(combinedHash, rounds)).slice(0, 16);
 
-  return toBase64Url(new Uint8Array([...xorResult, ...pbkdf2Result]));
+  return toBase64Url(new Uint8Array([...xorResult, ...iteratedHash]));
 }

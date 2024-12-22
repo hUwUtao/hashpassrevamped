@@ -1,22 +1,46 @@
-import type * as React from "react";
-import debounce from "debounce";
-import { createUseStyles } from "react-jss";
-import { useEffect, useCallback, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useCallback, useRef, useReducer, useState } from "react";
 
 import Input from "./input";
 import fillInPassword from "./fill-in-password";
 import fireAndForget from "./fire-and-forget";
 import hashpass from "./worker-client";
 import { Button } from "./button";
+import { PasswordProvider, usePassword } from "./secret";
+import useDebounce from "./debouncelock";
 
 const debounceMilliseconds = 200;
 const copyToClipboardSuccessIndicatorMilliseconds = 1000;
 
-const useStyles = createUseStyles({
-	domain: {
-		color: "#666666",
-	},
-});
+// Remove useStyles and replace with UnoCSS classes
+// const useStyles = createUseStyles({
+// 	domain: {
+// 		color: "#666666",
+// 	},
+// });
+
+// Define initial state
+const initialState = {
+	domain: "",
+	universalPassword: "",
+	universalPasswordPower: 0,
+	isUniversalPasswordHidden: true,
+	generatedPassword: "",
+	isGeneratedPasswordHidden: true,
+	username: "",
+	updatesInProgress: false,
+	pendingCopyToClipboard: false,
+	copyToClipboardTimeoutId: null as ReturnType<typeof setTimeout> | null,
+	pendingFillInPassword: false,
+};
+
+// Define reducer
+function reducer(
+	state: typeof initialState,
+	action: Partial<typeof initialState>,
+): typeof initialState {
+	return { ...state, ...action };
+}
 
 const UserInterface = ({
 	initialDomain,
@@ -25,61 +49,24 @@ const UserInterface = ({
 	readonly initialDomain: string | null;
 	readonly isPasswordFieldActive: boolean;
 }): React.ReactElement => {
-	const classes = useStyles();
-	const [domain, setDomain] = useState<string | null>(initialDomain);
-	const [universalPassword, setUniversalPassword] = useState("");
-	const [isUniversalPasswordHidden, setIsUniversalPasswordHidden] =
-		useState(true);
-	const [generatedPassword, setGeneratedPassword] = useState("");
-	const [isGeneratedPasswordHidden, setIsGeneratedPasswordHidden] =
-		useState(true);
-	const [username, setUsername] = useState("");
-	// eslint-disable-next-line @typescript-eslint/no-magic-numbers -- Start with 0 tasks in progress.
-	const [updatesInProgress, setUpdatesInProgress] = useState(0);
-	const [pendingCopyToClipboard, setPendingCopyToClipboard] = useState(false);
-	const [copyToClipboardTimeoutId, setCopyToClipboardTimeoutId] =
-		useState<ReturnType<typeof setTimeout> | null>(null);
-	const [pendingFillInPassword, setPendingFillInPassword] = useState(false);
+	// const classes = useStyles();
+	const [state, dispatch] = useReducer(reducer, {
+		...initialState,
+		domain: initialDomain ?? "",
+	});
 	const domainRef = useRef<HTMLInputElement>(null);
 	const universalPasswordRef = useRef<HTMLInputElement>(null);
 	const usernameRef = useRef<HTMLInputElement>(null);
-
-	// eslint-disable-next-line react-hooks/exhaustive-deps -- We need to debounce this function.
-	const updateGeneratedPassword = useCallback(
-		debounce(
-			(
-				newDomain: string,
-				newUniversalPassword: string,
-				newUsername: string,
-			) => {
-				setUpdatesInProgress(
-					// eslint-disable-next-line @typescript-eslint/no-magic-numbers -- Increment = +1.
-					(previousTasksInProgress) => previousTasksInProgress + 1,
-				);
-				fireAndForget(
-					(async (): Promise<void> => {
-						setGeneratedPassword(
-							await hashpass(newDomain, newUniversalPassword, newUsername),
-						);
-						setUpdatesInProgress(
-							// eslint-disable-next-line @typescript-eslint/no-magic-numbers -- Decrement = -1.
-							(previousTasksInProgress) => previousTasksInProgress - 1,
-						);
-					})(),
-				);
-			},
-			debounceMilliseconds,
-		),
-		[],
-	);
+	const { passwordInfo, storePassword } = usePassword();
+	const prevPasswordRef = useRef<string | null>(null);
+	const [once, setOnce] = useState(false);
 
 	useEffect(() => {
 		const domainElement = domainRef.current;
 		const universalPasswordElement = universalPasswordRef.current;
 
-		// Set the domain and focus the appropriate input if necessary.
-		if (initialDomain !== null && domain === null) {
-			setDomain(initialDomain);
+		if (initialDomain !== null && state.domain === "") {
+			dispatch({ domain: initialDomain });
 
 			if (document.activeElement === document.body) {
 				if (initialDomain === "") {
@@ -91,14 +78,30 @@ const UserInterface = ({
 				}
 			}
 		}
-	}, [domain, initialDomain]);
+	}, [state.domain, initialDomain]);
 
 	useEffect(() => {
-		updateGeneratedPassword(domain ?? "", universalPassword, username);
-	}, [updateGeneratedPassword, domain, universalPassword, username]);
+		if (prevPasswordRef.current !== state.universalPassword) {
+			storePassword(state.universalPassword);
+			prevPasswordRef.current = state.universalPassword;
+		}
+	}, [state.universalPassword, storePassword]);
+
+	const fetchGeneratedPassword = useDebounce(async () => {
+		const generatedPassword = await hashpass(
+			state.domain,
+			passwordInfo ? passwordInfo.hashedPassword : state.universalPassword,
+			state.username,
+		);
+		dispatch({ generatedPassword });
+	}, debounceMilliseconds);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: seperated debouncer
+	useEffect(() => {
+		fetchGeneratedPassword();
+	}, [state.domain, state.universalPassword, state.username]);
 
 	const onResetDomain = useCallback((): void => {
-		setDomain(initialDomain ?? "");
+		dispatch({ domain: initialDomain ?? "" });
 
 		const universalPasswordElement = universalPasswordRef.current;
 
@@ -108,63 +111,53 @@ const UserInterface = ({
 	}, [initialDomain]);
 
 	const onToggleUniversalPasswordHidden = useCallback((): void => {
-		setIsUniversalPasswordHidden(!isUniversalPasswordHidden);
+		dispatch({ isUniversalPasswordHidden: !state.isUniversalPasswordHidden });
 
 		const universalPasswordElement = universalPasswordRef.current;
 
 		if (universalPasswordElement !== null) {
 			universalPasswordElement.focus();
 		}
-	}, [isUniversalPasswordHidden]);
+	}, [state.isUniversalPasswordHidden]);
 
 	const onCopyGeneratedPasswordToClipboard = useCallback((): void => {
-		updateGeneratedPassword.flush();
-		setPendingCopyToClipboard(true);
-	}, [updateGeneratedPassword]);
+		dispatch({ pendingCopyToClipboard: true });
+	}, []);
 
 	const onToggleGeneratedPasswordHidden = useCallback((): void => {
-		setIsGeneratedPasswordHidden(!isGeneratedPasswordHidden);
-	}, [isGeneratedPasswordHidden]);
+		dispatch({ isGeneratedPasswordHidden: !state.isGeneratedPasswordHidden });
+	}, [state.isGeneratedPasswordHidden]);
 
-	const onFormSubmit = useCallback(
-		(event: React.FormEvent): void => {
-			event.preventDefault();
-			event.stopPropagation();
+	const onFormSubmit = useCallback((event: React.FormEvent): void => {
+		event.preventDefault();
+		event.stopPropagation();
 
-			updateGeneratedPassword.flush();
-			setPendingFillInPassword(true);
-		},
-		[updateGeneratedPassword],
-	);
+		dispatch({ pendingFillInPassword: true });
+	}, []);
 
-	// eslint-disable-next-line @typescript-eslint/no-magic-numbers -- No tasks in progress?
-	if (updatesInProgress === 0) {
-		if (pendingCopyToClipboard) {
-			setPendingCopyToClipboard(false);
+	if (!state.updatesInProgress) {
+		if (state.pendingCopyToClipboard) {
+			dispatch({ pendingCopyToClipboard: false });
 
 			fireAndForget(
 				(async (): Promise<void> => {
-					await navigator.clipboard.writeText(generatedPassword);
+					await navigator.clipboard.writeText(state.generatedPassword);
 
-					setCopyToClipboardTimeoutId((oldTimeoutId) => {
-						if (oldTimeoutId !== null) {
-							clearTimeout(oldTimeoutId);
-						}
-
-						return setTimeout(() => {
-							setCopyToClipboardTimeoutId(null);
-						}, copyToClipboardSuccessIndicatorMilliseconds);
+					dispatch({
+						copyToClipboardTimeoutId: setTimeout(() => {
+							dispatch({ copyToClipboardTimeoutId: null });
+						}, copyToClipboardSuccessIndicatorMilliseconds),
 					});
 				})(),
 			);
 		}
 
-		if (pendingFillInPassword) {
-			setPendingFillInPassword(false);
+		if (state.pendingFillInPassword) {
+			dispatch({ pendingFillInPassword: false });
 
 			fireAndForget(
 				(async (): Promise<void> => {
-					await fillInPassword(generatedPassword);
+					await fillInPassword(state.generatedPassword);
 					window.close();
 				})(),
 			);
@@ -175,7 +168,7 @@ const UserInterface = ({
 		<form onSubmit={onFormSubmit}>
 			<Input
 				buttons={
-					initialDomain === null || domain === initialDomain
+					initialDomain === null || state.domain === initialDomain
 						? []
 						: [
 								<Button
@@ -190,11 +183,11 @@ const UserInterface = ({
 				hideValue={false}
 				label="Domain"
 				monospace={false}
-				onChange={setDomain}
+				onChange={(value) => dispatch({ domain: value })}
 				placeholder="example.com"
 				ref={domainRef}
 				updating={false}
-				value={domain ?? ""}
+				value={state.domain}
 			/>
 			<Input
 				buttons={[
@@ -204,23 +197,29 @@ const UserInterface = ({
 							onClick: onToggleUniversalPasswordHidden,
 						}}
 						description={
-							isUniversalPasswordHidden
+							state.isUniversalPasswordHidden
 								? "Show the password."
 								: "Hide the password."
 						}
-						imageName={isUniversalPasswordHidden ? "eye-off" : "eye"}
+						imageName={state.isUniversalPasswordHidden ? "eye-off" : "eye"}
 						key="eye"
 					/>,
 				]}
+				focus={true}
 				disabled={false}
-				hideValue={isUniversalPasswordHidden}
+				hideValue={state.isUniversalPasswordHidden}
 				label="Universal password"
 				monospace
-				onChange={setUniversalPassword}
-				placeholder=""
+				onChange={(value) => dispatch({ universalPassword: value })}
+				placeholder={
+					passwordInfo
+						? `Password (length: ${passwordInfo.passwordLength})`
+						: ""
+				}
 				ref={universalPasswordRef}
 				updating={false}
-				value={universalPassword}
+				value={state.universalPassword}
+				passwordStrength={(0.1 + passwordInfo?.passwordPower) / 4.1}
 			/>
 			<Input
 				buttons={[]}
@@ -228,11 +227,11 @@ const UserInterface = ({
 				hideValue={false}
 				label="Username"
 				monospace={false}
-				onChange={setUsername}
+				onChange={(value) => dispatch({ username: value })}
 				placeholder="username"
 				ref={usernameRef}
 				updating={false}
-				value={username}
+				value={state.username}
 			/>
 			<Input
 				buttons={[
@@ -248,7 +247,7 @@ const UserInterface = ({
 						: []),
 					<Button
 						buttonType={
-							copyToClipboardTimeoutId
+							state.copyToClipboardTimeoutId
 								? { type: "noninteractive" }
 								: {
 										type: "normal",
@@ -256,7 +255,9 @@ const UserInterface = ({
 									}
 						}
 						description="Copy the password to the clipboard."
-						imageName={copyToClipboardTimeoutId ? "check" : "clipboard-copy"}
+						imageName={
+							state.copyToClipboardTimeoutId ? "check" : "clipboard-copy"
+						}
 						key="clipboard-copy"
 					/>,
 					<Button
@@ -265,32 +266,32 @@ const UserInterface = ({
 							onClick: onToggleGeneratedPasswordHidden,
 						}}
 						description={
-							isGeneratedPasswordHidden
+							state.isGeneratedPasswordHidden
 								? "Show the password."
 								: "Hide the password."
 						}
-						imageName={isGeneratedPasswordHidden ? "eye-off" : "eye"}
+						imageName={state.isGeneratedPasswordHidden ? "eye-off" : "eye"}
 						key="eye"
 					/>,
 				]}
 				disabled
-				hideValue={isGeneratedPasswordHidden}
+				hideValue={state.isGeneratedPasswordHidden}
 				label={
-					(domain ?? "").trim() === "" ? (
+					state.domain.trim() === "" ? (
 						"Password for this domain"
 					) : (
 						<span>
-							Password for <span className={classes.domain}>{domain}</span>
+							Password for <span className="text-gray-600">{state.domain}</span>
 						</span>
 					)
 				}
 				monospace
+				placeholder="Password"
 				onChange={null}
-				placeholder=""
-				// eslint-disable-next-line @typescript-eslint/no-magic-numbers -- Any tasks in progress?
-				updating={updatesInProgress !== 0}
-				value={generatedPassword}
+				updating={state.updatesInProgress}
+				value={state.generatedPassword}
 			/>
+			{/* <p>{state.generatedPassword}</p> */}
 		</form>
 	);
 };
