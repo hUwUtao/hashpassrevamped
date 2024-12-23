@@ -1,11 +1,15 @@
 import { defineConfig } from "vite";
-import UnoCSS from 'unocss/vite'
+import UnoCSS from 'unocss/vite';
 import preact from '@preact/preset-vite';
 
 export default defineConfig({
 	plugins: [
 		UnoCSS(),
-		// preact()
+		preact({
+			prerender: {
+				enabled: true,
+			}
+		}),
 	],
 	worker: {
 		format: "es"

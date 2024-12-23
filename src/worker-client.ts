@@ -1,7 +1,10 @@
 import type { Request, Response } from "./worker-protocol";
 
-// Spawn a web worker for offloading password generation to a dedicated thread.
-const worker = new Worker(new URL("./worker.impure.ts?worker", import.meta.url), { type: "module" });
+let worker: Worker | undefined;
+if (typeof window !== "undefined") {
+	// Spawn a web worker for offloading password generation to a dedicated thread.
+	worker = new Worker(new URL("./worker.impure.ts?worker", import.meta.url), { type: "module" });
+}
 
 // Each message has a unique auto-incrementing identifier.
 let nextMessageId = 0;
@@ -9,11 +12,13 @@ let nextMessageId = 0;
 // Keep track of all in-flight requests so we know what to do with the corresponding responses.
 const requests: Record<number, (generatedPassword: string) => void> = {};
 
-// This is the handler for incoming responses.
-worker.onmessage = (event: MessageEvent<Response>) => {
-	requests[event.data.messageId](event.data.generatedPassword);
-	delete requests[event.data.messageId];
-};
+if (worker) {
+	// This is the handler for incoming responses.
+	worker.onmessage = (event: MessageEvent<Response>) => {
+		requests[event.data.messageId](event.data.generatedPassword);
+		delete requests[event.data.messageId];
+	};
+}
 
 export default function hashpass(
 	domain: string,
@@ -21,6 +26,10 @@ export default function hashpass(
 	username: string, // Add username parameter
 ): Promise<string> {
 	return new Promise((resolve, reject) => {
+		if (!worker) {
+			return reject(new Error("Web worker is not available"));
+		}
+
 		const request: Request = {
 			messageId: nextMessageId,
 			domain,

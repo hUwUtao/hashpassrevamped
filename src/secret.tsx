@@ -37,19 +37,20 @@ export const PasswordProvider: React.FC<PasswordProviderProps> = ({
 	children,
 }) => {
 	const [passwordInfo, setPasswordInfo] = useState<PasswordInfo | null>(() => {
-		const storedPassword = localStorage.getItem(STORAGE_KEY);
-		return storedPassword ? JSON.parse(storedPassword) : null;
+		// const storedPassword = localStorage.getItem(STORAGE_KEY);
+		const storedPassword = null;
+		return storedPassword ? JSON.parse(storedPassword) : { hashedPassword: "", passwordPower: 0, passwordLength: 0 };
 	});
 
-	const debouncedStoreTrigger = useDebounce(
-		async () => {
-			if (passwordInfo) {
-				localStorage.setItem(STORAGE_KEY, JSON.stringify(passwordInfo));
-			}
-		},
-		200,
-		[passwordInfo],
-	);
+	// const debouncedStoreTrigger = useDebounce(
+	// 	async () => {
+	// 		if (passwordInfo) {
+	// 			localStorage.setItem(STORAGE_KEY, JSON.stringify(passwordInfo));
+	// 		}
+	// 	},
+	// 	200,
+	// 	[passwordInfo],
+	// );
 
 	const storePassword = async (password: string) => {
 		const hashedPassword = await computeSha256(

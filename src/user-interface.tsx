@@ -158,7 +158,7 @@ const UserInterface = ({
 			fireAndForget(
 				(async (): Promise<void> => {
 					await fillInPassword(state.generatedPassword);
-					window.close();
+					if (typeof window !== "undefined") window.close();
 				})(),
 			);
 		}
